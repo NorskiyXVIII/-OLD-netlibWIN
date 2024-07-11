@@ -47,7 +47,7 @@ and
 #include <string.h>
 #include <winsock2.h>
 
-#include "net.hpp"
+#include "net/core.h"
 
 int main() {
 	WSADATA wsa;
