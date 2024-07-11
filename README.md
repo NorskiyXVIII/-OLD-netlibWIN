@@ -6,7 +6,7 @@ examples:
 #include <stdio.h>
 #include <winsock2.h>
 
-#include "net.hpp"
+#include "net/core.h"
 
 #define PORT 8392
 
