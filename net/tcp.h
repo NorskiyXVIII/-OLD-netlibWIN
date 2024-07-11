@@ -8,9 +8,11 @@ namespace net {
 		private:
 			net::socket   conn_sock;
 			net::socket   listen_sock;
-			net::sockinfo info;
+
+			net::addrinfo addr_info;
+			net::sockinfo sock_info;
 		public:
-			listener(char* ip, char* port);
+			listener(net::family fm_type, const char* ip, const char* port, int listens_count);
 		};
 
 		class sender {

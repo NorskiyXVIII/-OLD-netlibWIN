@@ -3,6 +3,12 @@
 
 net::socket::socket() { this->sock = INVALID_SOCKET; }
 net::socket::socket(SOCKET sock) : sock{ sock } {}
+
+net::socket::socket(const net::addrinfo& sk) {
+	if (sock != INVALID_SOCKET) closesocket(sock);
+	sock = ::socket(sk.res->ai_family, sk.res->ai_socktype, sk.res->ai_protocol);
+}
+
 net::socket::socket(int ip_ver, int sock_type, int protocol) {
 		if (sock != INVALID_SOCKET) closesocket(sock);
 		sock = ::socket(ip_ver, sock_type, protocol);
@@ -25,61 +31,69 @@ net::socket::socket(int family, const char* ip, ushort port, int sock_type, int 
 		bind(addr_in);
 }
 
-net::socket::~socket() { closesocket(sock); }
+net::socket::~socket() {
+	if (sock == INVALID_SOCKET) return;
+	closesocket(sock);
+}
 
 void net::socket::make_server() {
-		if (sock_tp == SOCK_LSTN) return;
-		sock_tp = SOCK_LSTN;
+		if (sock_tp == sock_type::SOCK_LSTN) return;
+		sock_tp = sock_type::SOCK_LSTN;
 	}
 void net::socket::make_client() {
-		if (sock_tp == SOCK_CLNT) return;
-		sock_tp = SOCK_CLNT;
+		if (sock_tp == sock_type::SOCK_CLNT) return;
+		sock_tp = sock_type::SOCK_CLNT;
 	}
 SOCKET net::socket::get_socket() {
 		return sock;
 }
 
+SOCKET& net::socket::operator=(const net::socket& sck) {
+	if (sock != INVALID_SOCKET) closesocket(sock);
+	sock = sck.sock;
+}
+
 void net::socket::bind(sockinfo& sock_in, int size) {
-		if (sock_tp != SOCK_LSTN) return;
+		if (sock_tp != sock_type::SOCK_LSTN) return;
 		::bind(sock, sock_in.as_sockaddr(), size);
 }
 void net::socket::bind(sockaddr_in& sock_in, int size) {
-		if (sock_tp != SOCK_LSTN) return;
+		if (sock_tp != sock_type::SOCK_LSTN) return;
 		::bind(sock, (sockaddr*)&sock_in, size);
 }
 void net::socket::bind(sockaddr& sock_in, int size) {
-		if (sock_tp != SOCK_LSTN) return;
+		if (sock_tp != sock_type::SOCK_LSTN) return;
 		::bind(sock, &sock_in, size);
 }
 
 void net::socket::listen(int count_conns) {
-		if (sock_tp != SOCK_LSTN) return;
+		if (sock_tp != sock_type::SOCK_LSTN) return;
 		::listen(sock, count_conns);
 }
 
 SOCKET net::socket::accept(sockinfo& sock_in, int& size) {
-		if (sock_tp != SOCK_LSTN) return INVALID_SOCKET;
+		if (sock_tp != sock_type::SOCK_LSTN) return INVALID_SOCKET;
 		SOCKET conn = ::accept(sock, sock_in.as_sockaddr(), &size);
 
 		return conn;
 }
 
 net::status net::socket::connect(sockinfo& sock_in, int size) {
-		if (sock_tp != SOCK_CLNT) return sock_is_not_client;
+		if (sock_tp != sock_type::SOCK_CLNT) return sock_is_not_client;
 
 		 net::status st = ::connect(sock, sock_in.as_sockaddr(), size);
 
 		 return st;
 }
 net::status net::socket::connect(sockaddr_in& sock_in, int size) {
-		if (sock_tp != SOCK_CLNT) return sock_is_not_client;
+		if (sock_tp != sock_type::SOCK_CLNT) return sock_is_not_client;
 
 		net::status st = ::connect(sock, (sockaddr*)&sock_in, size);
 
 		return st;
 }
 net::status net::socket::connect(sockaddr& sock_in, int size) {
-		if (sock_tp != SOCK_CLNT) return sock_is_not_client;
+		if (sock_tp != sock_type::SOCK_CLNT) return sock_is_not_client;
 
 		net::status st = ::connect(sock, &sock_in, size);
 
@@ -87,7 +101,7 @@ net::status net::socket::connect(sockaddr& sock_in, int size) {
 }
 
 net::status net::socket::connect(net::addrinfo& addrinf) {
-	if (sock_tp != SOCK_CLNT) return sock_is_not_client;
+	if (sock_tp != sock_type::SOCK_CLNT) return sock_is_not_client;
 	sockaddr* sock_addr = addrinf.get_sockaddr();
 
 	while (1) {
@@ -106,7 +120,7 @@ net::status net::socket::connect(net::addrinfo& addrinf) {
 }
 
 net::status net::socket::connect(::addrinfo* addrinf) {
-	if (sock_tp != SOCK_CLNT) return sock_is_not_client;
+	if (sock_tp != sock_type::SOCK_CLNT) return sock_is_not_client;
 
 	sockaddr* sock_addr = addrinf->ai_addr;
 
@@ -125,13 +139,16 @@ net::status net::socket::connect(::addrinfo* addrinf) {
 }
 
 void net::socket::recv(byte* buf, size_t len, int params) {
-		::recv(sock, buf, len, params);
+	::recv(sock, buf, len, params);
 }
 void net::socket::send(byte* buf, size_t len, int params) {
-		::send(sock, buf, len, params);
+	::send(sock, buf, len, params);
 }
 
-void net::socket::close() {
-		closesocket(sock);
+net::status net::socket::close() {
+	if (sock == INVALID_SOCKET) return sock_already_closed;
+	closesocket(sock);
+	sock = INVALID_SOCKET;
+	return net::success;
 }
 

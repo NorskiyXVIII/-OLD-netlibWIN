@@ -6,20 +6,72 @@
 #include <string>
 
 namespace net {
-	using ushort = unsigned short; // псевдоним
-	using ulong = unsigned long;
-	using uchar = unsigned char;
+	using ushort   = unsigned short; // псевдоним
+	using ulong    = unsigned long;
+	using uchar    = unsigned char;
 	using socksize = int;
-	using byte = char;
-	using status = int;
+	using byte     = char;
+	using status   = int;
+	using family   = int;
 
 	constexpr status sock_is_not_server = 101;
 	constexpr status sock_is_not_client = 100;
 
-
+	constexpr status sock_already_closed = 2;
 	constexpr status success = 1;
 	constexpr status cannot_connect = 0;
 
+	class sockinfo;
+	class addrinfo;
+
+	class socket {
+	private:
+		enum class sock_type: status { SOCK_LSTN = 1, SOCK_CLNT };
+		SOCKET sock = INVALID_SOCKET;
+		sock_type sock_tp = sock_type::SOCK_LSTN;
+	public:
+		socket();
+
+		socket(SOCKET sock);
+
+		socket(const net::addrinfo& sk);
+
+		socket(int ip_ver, int sock_type, int protocol);
+		socket(int sock_type, int protocol);
+
+		socket(const char* ip, ushort port, int sock_type = SOCK_STREAM, int protocol = IPPROTO_TCP);
+		socket(int family, const char* ip, ushort port, int sock_type = SOCK_STREAM, int protocol = IPPROTO_TCP);
+
+		~socket();
+
+		void make_server();
+		void make_client();
+		SOCKET get_socket();
+
+		SOCKET& operator=(const net::socket& sck);
+
+		void bind(sockinfo& sock_in, int size = sizeof(sockaddr));
+		void bind(sockaddr_in& sock_in, int size = sizeof(sockaddr));
+		void bind(sockaddr& sock_in, int size = sizeof(sockaddr));
+
+		void listen(int count_conns);
+
+		SOCKET accept(sockinfo& sock_in, int& size);
+
+		status connect(sockinfo& sock_in, int size = sizeof(sockaddr));
+		status connect(sockaddr_in& sock_in, int size = sizeof(sockaddr));
+		status connect(sockaddr& sock_in, int size = sizeof(sockaddr));
+		status connect(addrinfo& addrinf);
+		status connect(::addrinfo* addrinf);
+
+		void recv(byte* buf, size_t len, int params = 0);
+		void send(byte* buf, size_t len, int params = 0);
+
+		status close();
+
+		friend net::addrinfo;
+		friend net::sockinfo;
+	};
 	class sockinfo {
 	private:
 		sockaddr_in addr_in;
@@ -65,6 +117,9 @@ namespace net {
 		sockaddr_in* as_sockaddrin();
 
 		size_t get_size();
+
+		friend net::addrinfo;
+		friend net::socket;
 	};
 	class addrinfo {
 	private:
@@ -83,46 +138,8 @@ namespace net {
 		void set(const char* ip, const char* port);
 
 		~addrinfo();
-	};
-	class socket {
-	private:
-		enum sock_type { SOCK_LSTN, SOCK_CLNT };
-		SOCKET sock = INVALID_SOCKET;
-		sock_type sock_tp = SOCK_LSTN;
-	public:
-		socket();
 
-		socket(SOCKET sock);
-
-		socket(int ip_ver, int sock_type, int protocol);
-		socket(int sock_type, int protocol);
-
-		socket(const char* ip, ushort port, int sock_type = SOCK_STREAM, int protocol = IPPROTO_TCP);
-		socket(int family, const char* ip, ushort port, int sock_type = SOCK_STREAM, int protocol = IPPROTO_TCP);
-
-		~socket();
-
-		void make_server();
-		void make_client();
-		SOCKET get_socket();
-
-		void bind(sockinfo& sock_in, int size = sizeof(sockaddr));
-		void bind(sockaddr_in& sock_in, int size = sizeof(sockaddr));
-		void bind(sockaddr& sock_in, int size = sizeof(sockaddr));
-
-		void listen(int count_conns);
-
-		SOCKET accept(sockinfo& sock_in, int& size);
-
-		status connect(sockinfo& sock_in, int size = sizeof(sockaddr));
-		status connect(sockaddr_in& sock_in, int size = sizeof(sockaddr));
-		status connect(sockaddr& sock_in, int size = sizeof(sockaddr));
-		status connect(addrinfo& addrinf);
-		status connect(::addrinfo* addrinf);
-
-		void recv(byte* buf, size_t len, int params = 0);
-		void send(byte* buf, size_t len, int params = 0);
-
-		void close();
+		friend net::socket;
+		friend net::sockinfo;
 	};
 }

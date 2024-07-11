@@ -36,6 +36,6 @@ net::addrinfo::~addrinfo() {
 }
 
 void net::addrinfo::set(const char* ip, const char* port) {
-	freeaddrinfo(res);
+	if (res != NULL) freeaddrinfo(res);
 	getaddrinfo(ip, port, &adr, &res);
 }
