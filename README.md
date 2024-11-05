@@ -50,8 +50,7 @@ and
 #include "net/core.h"
 
 int main() {
-	WSADATA wsa;
-	WSAStartup(MAKEWORD(2, 2), &wsa);
+	NTDATA nt{2, 2};
 	
 	net::sockinfo server_addr{AF_INET, "127.0.0.1", 8392};
 	
@@ -64,8 +63,6 @@ int main() {
 	printf("send msg to server: ");
 	scanf("%[^\n]", msg);
 	conn_sock.send(msg, strlen(msg) + 1);
-	
-	WSACleanup();
 	return 0;
 }
 ```
