@@ -1,4 +1,4 @@
-It works 100% on Windows computers, I don't know about linux, but you can check
+It works 100% on Windows computers.
 
 examples:
 ```C++
@@ -19,8 +19,7 @@ void print_client(struct sockaddr_in* client) {
 }
 
 int main() {
-	WSADATA wsa;
-	WSAStartup(MAKEWORD(2,2), &wsa);
+	NTDATA nt{2, 2};
 	
 	net::socket sock_conn{AF_INET, "127.0.0.1", PORT};
 	printf("server started!\n");
@@ -36,7 +35,6 @@ int main() {
 	client_conn.recv(msg, 100);
 	printf("Recieved msg: %s\n", msg);
 	
-	WSACleanup();
 	return 0;
 }
 ```
